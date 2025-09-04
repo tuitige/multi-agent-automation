@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { tool } from '@langchain/core/tools';
+import { DynamicStructuredTool } from '@langchain/core/tools';
 import { McpClient, McpToolRequest } from './mcp-client';
 
 const createZohoLeadSchema = z.object({
@@ -13,8 +13,11 @@ const createZohoLeadSchema = z.object({
 });
 
 export function createZohoLeadTool(mcpClient: McpClient) {
-  return tool(
-    async (input: z.infer<typeof createZohoLeadSchema>) => {
+  return new DynamicStructuredTool({
+    name: 'create_zoho_lead',
+    description: 'Create a new lead in Zoho CRM via Zapier integration',
+    schema: createZohoLeadSchema,
+    func: async (input: z.infer<typeof createZohoLeadSchema>) => {
       try {
         const result = await mcpClient.createZohoLead(input as McpToolRequest);
         return `Successfully created Zoho lead: ${JSON.stringify(result)}`;
@@ -23,10 +26,5 @@ export function createZohoLeadTool(mcpClient: McpClient) {
         return `Failed to create Zoho lead: ${errorMessage}`;
       }
     },
-    {
-      name: 'create_zoho_lead',
-      description: 'Create a new lead in Zoho CRM via Zapier integration',
-      schema: createZohoLeadSchema,
-    }
-  );
+  });
 }

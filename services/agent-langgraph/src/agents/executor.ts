@@ -1,5 +1,5 @@
 import { ChatOpenAI } from '@langchain/openai';
-import { AgentExecutor, createOpenAIToolsAgent } from 'langchain/agents';
+import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 
 export class ExecutorAgent {
@@ -8,7 +8,7 @@ export class ExecutorAgent {
 
   constructor(tools: any[]) {
     this.llm = new ChatOpenAI({
-      model: 'gpt-3.5-turbo',
+      modelName: 'gpt-3.5-turbo',
       temperature: 0,
     });
 
@@ -21,7 +21,7 @@ Always use the appropriate tool when available rather than trying to simulate th
       ['placeholder', '{agent_scratchpad}'],
     ]);
 
-    const agent = createOpenAIToolsAgent({
+    const agent = createToolCallingAgent({
       llm: this.llm,
       tools,
       prompt,

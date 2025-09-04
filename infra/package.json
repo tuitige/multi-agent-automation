@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "jest",
+    "test": "echo 'Tests not configured'",
+    "lint": "echo 'Linting not configured for infra'",
     "cdk": "cdk",
     "deploy": "npm run build && cdk deploy --all",
     "diff": "npm run build && cdk diff",

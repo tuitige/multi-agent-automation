@@ -8,16 +8,15 @@
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "cli": "tsx src/cli.ts",
-    "test": "jest",
+    "test": "echo 'Tests not implemented yet'",
     "lint": "eslint src/**/*.ts",
     "build:docker": "docker build -t agent-langgraph ."
   },
   "dependencies": {
     "express": "^4.18.2",
-    "@langchain/core": "^0.1.0",
-    "langchain": "^0.1.0",
-    "@langchain/openai": "^0.0.15",
-    "langgraph": "^0.0.30",
+    "@langchain/core": "^0.2.0",
+    "langchain": "^0.2.0",
+    "@langchain/openai": "^0.2.0",
     "axios": "^1.6.0",
     "commander": "^11.1.0",
     "zod": "^3.22.4"

@@ -1,4 +1,3 @@
-import { StateGraph, END } from 'langgraph';
 import { PlannerAgent } from './agents/planner';
 import { ExecutorAgent } from './agents/executor';
 import { McpClient } from './tools/mcp-client';
@@ -14,88 +13,52 @@ interface WorkflowState {
 export class MultiAgentWorkflow {
   private planner: PlannerAgent;
   private executor: ExecutorAgent;
-  private graph: StateGraph<WorkflowState>;
 
   constructor(mcpServerUrl: string, hmacSecret: string) {
     const mcpClient = new McpClient(mcpServerUrl, hmacSecret);
     this.planner = new PlannerAgent(mcpClient);
     this.executor = new ExecutorAgent(this.planner.getTools());
-
-    this.graph = new StateGraph<WorkflowState>({
-      channels: {
-        objective: null,
-        plan: null,
-        currentStep: null,
-        results: null,
-        completed: null,
-      },
-    });
-
-    this.setupGraph();
-  }
-
-  private setupGraph(): void {
-    // Planning node
-    this.graph.addNode('planner', async (state: WorkflowState): Promise<Partial<WorkflowState>> => {
-      console.log(`Planning for objective: ${state.objective}`);
-      const plan = await this.planner.plan(state.objective);
-      return {
-        plan,
-        currentStep: 0,
-        results: [],
-        completed: false,
-      };
-    });
-
-    // Execution node
-    this.graph.addNode('executor', async (state: WorkflowState): Promise<Partial<WorkflowState>> => {
-      const { plan, currentStep, results } = state;
-      
-      if (currentStep >= plan.length) {
-        return { completed: true };
-      }
-
-      const task = plan[currentStep];
-      console.log(`Executing step ${currentStep + 1}: ${task}`);
-      
-      const result = await this.executor.execute(task);
-      const newResults = [...results, result];
-
-      return {
-        results: newResults,
-        currentStep: currentStep + 1,
-      };
-    });
-
-    // Conditional routing
-    this.graph.addConditionalEdges(
-      'executor',
-      (state: WorkflowState) => {
-        return state.currentStep >= state.plan.length ? 'end' : 'executor';
-      },
-      {
-        executor: 'executor',
-        end: END,
-      }
-    );
-
-    // Set entry point and edges
-    this.graph.setEntryPoint('planner');
-    this.graph.addEdge('planner', 'executor');
-
-    this.graph = this.graph.compile();
   }
 
   async run(objective: string): Promise<WorkflowState> {
-    const initialState: WorkflowState = {
+    console.log(`Starting workflow for objective: ${objective}`);
+
+    // Planning phase
+    console.log('Planning phase...');
+    const plan = await this.planner.plan(objective);
+    
+    const state: WorkflowState = {
       objective,
-      plan: [],
+      plan,
       currentStep: 0,
       results: [],
       completed: false,
     };
 
-    const finalState = await this.graph.invoke(initialState);
-    return finalState;
+    console.log(`Generated plan with ${plan.length} steps:`, plan);
+
+    // Execution phase
+    console.log('Execution phase...');
+    for (let i = 0; i < plan.length; i++) {
+      const task = plan[i];
+      console.log(`Executing step ${i + 1}: ${task}`);
+      
+      try {
+        const result = await this.executor.execute(task);
+        state.results.push(result);
+        state.currentStep = i + 1;
+        
+        console.log(`Step ${i + 1} completed: ${result}`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        state.results.push(`Error: ${errorMessage}`);
+        console.error(`Step ${i + 1} failed:`, errorMessage);
+      }
+    }
+
+    state.completed = true;
+    console.log('Workflow completed');
+
+    return state;
   }
 }

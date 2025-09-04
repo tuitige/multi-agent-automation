@@ -8,7 +8,7 @@ export class PlannerAgent {
 
   constructor(mcpClient: McpClient) {
     this.llm = new ChatOpenAI({
-      model: 'gpt-3.5-turbo',
+      modelName: 'gpt-3.5-turbo',
       temperature: 0,
     });
 
