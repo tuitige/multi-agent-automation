@@ -72,6 +72,26 @@ AWS CDK setup providing:
 - CloudWatch logging and AWS Secrets Manager
 - Security groups and IAM roles
 
+## CI/CD Pipeline
+
+Automated GitHub Actions workflow for monorepo deployment:
+
+### On Push to Main Branch:
+1. **Test & Lint**: Validates code quality across all services
+2. **CDK Synth**: Generates and validates CloudFormation templates
+3. **Build & Push**: Creates Docker images and pushes to ECR
+4. **Deploy Infrastructure**: Deploys AWS resources via CDK (with manual approval)
+5. **Deploy Services**: Updates ECS services with new images (with manual approval)
+
+### Manual Approval Gates:
+- Production environment protection requires manual approval for:
+  - Infrastructure deployments
+  - Service deployments
+
+### Requirements:
+- GitHub Secrets: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ACCOUNT_ID`
+- GitHub Environment: `production` (configure with protection rules for manual approval)
+
 ## Development
 
 ```bash

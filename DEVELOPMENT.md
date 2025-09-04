@@ -143,10 +143,53 @@ Ensure timestamps are recent (within 5 minutes) and signatures are correctly cal
 ### LangChain API Errors
 Verify your OpenAI API key is valid and has sufficient credits.
 
+## CI/CD Workflow
+
+The repository includes a complete CI/CD pipeline via GitHub Actions:
+
+### Workflow Triggers:
+- **Push to main/develop**: Full CI pipeline with deployment
+- **Pull requests to main**: CI validation only
+
+### Pipeline Steps:
+1. **Test & Lint**: Runs `npm ci`, `npm run lint`, `npm run build`, and `npm test`
+2. **CDK Synth**: Validates infrastructure code and uploads CloudFormation templates
+3. **Docker Build**: Builds and pushes service images to ECR
+4. **Deploy Infrastructure**: Deploys AWS resources with manual approval
+5. **Deploy Services**: Updates ECS services with manual approval
+
+### Setup Requirements:
+```bash
+# Required GitHub Secrets:
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_ACCOUNT_ID=your-account-id
+
+# GitHub Environment: 
+# Create "production" environment with protection rules for manual approval
+```
+
+### Local Testing of CI Steps:
+```bash
+# Test the full CI pipeline locally
+npm ci
+npm run lint
+npm run build
+npm test
+
+# Test Docker builds (requires package-lock.json copy)
+cp package-lock.json services/agent-langgraph/
+cd services/agent-langgraph && docker build -t test-image .
+
+# Test CDK synth
+cd infra
+npm ci
+npm run synth
+```
+
 ## Next Steps
 
 1. Deploy infrastructure: `npm run deploy:infra`
-2. Build and push Docker images
-3. Deploy services to AWS ECS
-4. Configure production environment variables
-5. Set up monitoring and logging
+2. Set up GitHub environments and protection rules
+3. Configure AWS secrets in GitHub repository settings
+4. Set up monitoring and logging

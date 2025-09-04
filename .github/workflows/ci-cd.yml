@@ -8,32 +8,36 @@ on:
 
 env:
   AWS_REGION: us-east-1
+  NODE_VERSION: '18'
 
 jobs:
   test:
+    name: Test & Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       
       - name: Install dependencies
         run: npm ci
       
-      - name: Lint
+      - name: Lint code
         run: npm run lint
       
-      - name: Build
+      - name: Build services
         run: npm run build
       
-      - name: Test
+      - name: Run tests
         run: npm test
 
   build-and-push:
+    name: Build & Push Docker Images
     needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -42,13 +46,24 @@ jobs:
         service: [mcp-server, agent-langgraph]
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build all services
+        run: npm run build
+      
+      - name: Copy package-lock.json for Docker build
+        run: |
+          cp package-lock.json services/${{ matrix.service }}/
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -68,25 +83,25 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           cd services/${{ matrix.service }}
-          npm ci
-          npm run build
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-  deploy-infrastructure:
+  cdk-synth:
+    name: CDK Synthesize
     needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       
       - name: Configure AWS credentials
@@ -96,7 +111,47 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
       
-      - name: Deploy infrastructure
+      - name: Install dependencies and synthesize CDK
+        run: |
+          cd infra
+          npm ci
+          npm run synth
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
+      
+      - name: Upload CDK templates as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk-templates-${{ github.sha }}
+          path: infra/cdk.out/
+          retention-days: 7
+
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    needs: [cdk-synth]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production  # This enables manual approval if configured in GitHub settings
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Deploy infrastructure with CDK
         run: |
           cd infra
           npm ci
@@ -106,9 +161,11 @@ jobs:
           CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
 
   deploy-services:
+    name: Deploy Services to ECS
     needs: [build-and-push, deploy-infrastructure]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: production  # This enables manual approval if configured in GitHub settings
     
     steps:
       - name: Configure AWS credentials
@@ -118,7 +175,21 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
       
-      - name: Update ECS services
+      - name: Force new deployment of ECS services
         run: |
-          aws ecs update-service --cluster multi-agent-cluster --service mcp-server --force-new-deployment
-          aws ecs update-service --cluster multi-agent-cluster --service agent-langgraph --force-new-deployment
+          echo "Updating ECS services to use new Docker images..."
+          aws ecs update-service \
+            --cluster multi-agent-cluster \
+            --service mcp-server-service \
+            --force-new-deployment \
+            --query 'service.serviceName' \
+            --output text
+          
+          aws ecs update-service \
+            --cluster multi-agent-cluster \
+            --service agent-langgraph-service \
+            --force-new-deployment \
+            --query 'service.serviceName' \
+            --output text
+          
+          echo "Service deployments initiated successfully"

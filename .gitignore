@@ -43,3 +43,6 @@ temp/
 # Coverage
 coverage/
 .nyc_output/
+
+# Service-specific package-lock.json files (generated during CI)
+services/*/package-lock.json
