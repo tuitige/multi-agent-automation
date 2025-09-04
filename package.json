@@ -1,0 +1,38 @@
+{
+  "name": "multi-agent-automation",
+  "version": "0.1.0",
+  "description": "Production-grade multi-agent architecture on AWS with LangGraph and MCP Server",
+  "private": true,
+  "workspaces": [
+    "infra",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces",
+    "clean": "npm run clean --workspaces",
+    "deploy:infra": "npm run deploy --workspace=infra",
+    "deploy:services": "npm run build:docker --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.1",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tuitige/multi-agent-automation"
+  },
+  "author": "",
+  "license": "MIT"
+}
