@@ -9,7 +9,7 @@
     "test": "echo 'Tests not configured'",
     "lint": "tsc --noEmit",
     "cdk": "cdk",
-    "deploy": "npm run build && cdk deploy --all",
+    "deploy": "npm run build && cdk deploy --all --require-approval never",
     "diff": "npm run build && cdk diff",
     "synth": "npm run build && cdk synth",
     "destroy": "cdk destroy --all"
