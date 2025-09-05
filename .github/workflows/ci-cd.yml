@@ -61,10 +61,6 @@ jobs:
       - name: Build all services
         run: npm run build
       
-      - name: Copy package-lock.json for Docker build
-        run: |
-          cp package-lock.json services/${{ matrix.service }}/
-      
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
