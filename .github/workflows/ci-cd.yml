@@ -185,14 +185,14 @@ jobs:
           echo "Updating ECS services to use new Docker images..."
           aws ecs update-service \
             --cluster multi-agent-cluster \
-            --service mcp-server-service \
+            --service mcp-server \
             --force-new-deployment \
             --query 'service.serviceName' \
             --output text
           
           aws ecs update-service \
             --cluster multi-agent-cluster \
-            --service agent-langgraph-service \
+            --service agent-langgraph \
             --force-new-deployment \
             --query 'service.serviceName' \
             --output text
