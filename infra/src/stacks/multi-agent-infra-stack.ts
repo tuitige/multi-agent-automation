@@ -179,6 +179,7 @@ export class MultiAgentInfraStack extends cdk.Stack {
 
     const mcpServerListener = internalAlb.addListener('McpServerListener', {
       port: 3000,
+      protocol: elbv2.ApplicationProtocol.HTTP,
       defaultTargetGroups: [mcpServerTargetGroup],
     });
 
