@@ -37,16 +37,10 @@ export class MultiAgentInfraStack extends cdk.Stack {
       containerInsights: true,
     });
 
-    // ECR Repositories
-    const mcpServerRepo = new ecr.Repository(this, 'McpServerRepo', {
-      repositoryName: 'multi-agent/mcp-server',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
+    // ECR Repositories - reference existing repositories
+    const mcpServerRepo = ecr.Repository.fromRepositoryName(this, 'McpServerRepo', 'multi-agent/mcp-server');
 
-    const agentRepo = new ecr.Repository(this, 'AgentRepo', {
-      repositoryName: 'multi-agent/agent-langgraph',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
+    const agentRepo = ecr.Repository.fromRepositoryName(this, 'AgentRepo', 'multi-agent/agent-langgraph');
 
     // CloudWatch Log Groups
     const mcpServerLogGroup = new logs.LogGroup(this, 'McpServerLogGroup', {
