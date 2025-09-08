@@ -17,7 +17,7 @@ export class MultiAgentInfraStack extends cdk.Stack {
     cdk.Tags.of(this).add('Repo', 'tuitige/multi-agent-automation');
     cdk.Tags.of(this).add('Stack', id);
 
-    // VPC with private subnets and NAT Gateway
+    // TODO(cdk): create VPC with 2 AZs, public/private subnets, NAT gateways
     const vpc = new ec2.Vpc(this, 'MultiAgentVpc', {
       maxAzs: 2,
       natGateways: 1,
@@ -35,17 +35,27 @@ export class MultiAgentInfraStack extends cdk.Stack {
       ],
     });
 
-    // ECS Cluster
+    // TODO(cdk): create ECS cluster
     const cluster = new ecs.Cluster(this, 'MultiAgentCluster', {
       vpc,
       clusterName: 'multi-agent-cluster',
       containerInsights: true,
     });
 
-    // ECR Repositories - reference existing repositories
-    const mcpServerRepo = ecr.Repository.fromRepositoryName(this, 'McpServerRepo', 'multi-agent/mcp-server');
+    // ECR Repositories - create new repositories for automated deployment
+    const mcpServerRepo = new ecr.Repository(this, 'McpServerRepo', {
+      repositoryName: 'multi-agent/mcp-server',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      imageTagMutability: ecr.TagMutability.MUTABLE,
+      imageScanOnPush: true,
+    });
 
-    const agentRepo = ecr.Repository.fromRepositoryName(this, 'AgentRepo', 'multi-agent/agent-langgraph');
+    const agentRepo = new ecr.Repository(this, 'AgentRepo', {
+      repositoryName: 'multi-agent/agent-langgraph',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      imageTagMutability: ecr.TagMutability.MUTABLE,
+      imageScanOnPush: true,
+    });
 
     // CloudWatch Log Groups
     const mcpServerLogGroup = new logs.LogGroup(this, 'McpServerLogGroup', {
@@ -73,7 +83,7 @@ export class MultiAgentInfraStack extends cdk.Stack {
       },
     });
 
-    // Security Group for MCP Server
+    // TODO(cdk): create security groups for ALB and ECS services
     const mcpServerSg = new ec2.SecurityGroup(this, 'McpServerSg', {
       vpc,
       description: 'Security group for MCP Server',
@@ -158,7 +168,7 @@ export class MultiAgentInfraStack extends cdk.Stack {
       },
     });
 
-    // Internal Application Load Balancer for service-to-service communication
+    // TODO(cdk): create internal ALB for service-to-service communication
     const internalAlb = new elbv2.ApplicationLoadBalancer(this, 'InternalAlb', {
       vpc,
       internetFacing: false,
