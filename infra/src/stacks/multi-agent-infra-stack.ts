@@ -12,6 +12,11 @@ export class MultiAgentInfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    // Add cost allocation tags to all resources in this stack
+    cdk.Tags.of(this).add('Project', 'multi-agent-automation');
+    cdk.Tags.of(this).add('Repo', 'tuitige/multi-agent-automation');
+    cdk.Tags.of(this).add('Stack', id);
+
     // VPC with private subnets and NAT Gateway
     const vpc = new ec2.Vpc(this, 'MultiAgentVpc', {
       maxAzs: 2,

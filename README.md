@@ -72,6 +72,41 @@ AWS CDK setup providing:
 - CloudWatch logging and AWS Secrets Manager
 - Security groups and IAM roles
 
+## Cost Allocation Tags
+
+All AWS resources are automatically tagged with cost allocation tags for easy cost analysis and optimization:
+
+- `Project`: "multi-agent-automation"
+- `Repo`: "tuitige/multi-agent-automation"  
+- `Stack`: Stack name (e.g., "MultiAgentInfraStack")
+
+### Using AWS Cost Explorer
+
+To analyze costs by tags:
+
+1. **Activate Cost Allocation Tags** in AWS Billing Console:
+   - Navigate to AWS Billing → Cost allocation tags
+   - Search for and activate the tags: `Project`, `Repo`, and `Stack`
+   - Note: It takes up to 24 hours for tags to appear after activation
+
+2. **View Costs in Cost Explorer**:
+   - Go to AWS Cost Management → Cost Explorer
+   - Create a new report or use existing ones
+   - Group by: Choose one of your activated tags (`Project`, `Repo`, or `Stack`)
+   - Filter by: Use specific tag values to focus on this project
+
+3. **Example Queries**:
+   - **Project costs**: Group by `Project` tag, filter by `Project=multi-agent-automation`
+   - **Stack breakdown**: Group by `Stack` tag, filter by `Project=multi-agent-automation`
+   - **Multi-repo comparison**: Group by `Repo` tag (if you have multiple repos)
+
+### Tagging Best Practices
+
+- **Consistent naming**: Use kebab-case for tag values
+- **Required tags**: All stacks should include Project, Repo, and Stack tags
+- **Additional tags**: Consider adding Environment (dev/staging/prod), Owner, or Department tags as needed
+- **Tag governance**: Use AWS Config rules or CDK Aspects to enforce tagging standards
+
 ## CI/CD Pipeline
 
 Automated GitHub Actions workflow for monorepo deployment:
